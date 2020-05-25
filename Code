@@ -1,0 +1,76 @@
+// HTTP запросы (лабораторная работа 3)
+// Кузнецова Е.А. Шалыгина А.В.
+
+#include <iostream>
+#include <boost/beast.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
+using namespace std;
+
+namespace beast = boost::beast; // пространство имён <boost/beast.hpp>
+namespace http = beast::http; // пространство имён <boost/beast/http.hpp>
+namespace net = boost::asio; // пространство имён <boost/asio.hpp>
+using tcp = net::ip::tcp; // пространство имён <boost/asio/ip/tcp.hpp>
+
+int main() // основная функция
+{
+    setlocale(LC_ALL, "Russian");
+    try // реализуем обработку исключений
+    {
+        int a = 0, b = 0, c=0;
+        string const host = "157.230.27.215"; // зададим хост
+        string const port = "80"; // зададим порт в пределах хоста
+        stringstream url;
+        
+        cout << "Введите числа: "; cin >> a >> b; // выполним операцию
+        cout << endl << "1 - сложение, 2 - вычитание" << endl;
+        cout << endl << "Выберите операцию: ";
+        cin >> c; cout << endl;
+        if (c == 1) // выбираем действие
+        {
+            url << "/calc/sum/" << a << "/" << b;
+        }
+        else
+        {
+            url << "/calc/diff/" << a << "/" << b;
+        }
+
+        net::io_context ioc; // контекст выполняемой операции
+        string const target = url.str();
+        int const version = 11;
+        cout << target;
+
+        tcp::resolver resolver(ioc); // объекты, выполняющие ввод/вывод
+        auto const results = resolver.resolve(host, port);
+        beast::tcp_stream stream(ioc);
+        stream.connect(results);
+
+        http::request<http::string_body> req{ http::verb::get, target, version }; // настройка http запроса
+        req.set(http::field::host, host); // заголовки
+        req.set(http::field::user_agent, "gg/test");
+
+        http::write(stream, req); // отправка запроса на хост
+
+        beast::flat_buffer buffer; // буфер, использующийся для чтения
+
+        http::response<http::dynamic_body> res; // хранение ответа
+
+        http::read(stream, buffer, res); // получение ответа
+        cout << res << endl;
+
+        beast::error_code ec; // закрытие сокета
+        stream.socket().shutdown(tcp::socket::shutdown_both, ec);
+
+        if (ec && ec != beast::errc::not_connected) // проверка ошибки соединения
+            throw beast::system_error{ ec };
+    }
+    catch (std::exception const& e) // учёт возможной ошибки
+    {
+        cerr << "Error: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
+}

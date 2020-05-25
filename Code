@@ -20,7 +20,7 @@ int main() // основная функция
     setlocale(LC_ALL, "Russian");
     try // реализуем обработку исключений
     {
-        int a = 0, b = 0, c=0;
+        int a = 0, b = 0, c = 0;
         string const host = "157.230.27.215"; // зададим хост
         string const port = "80"; // зададим порт в пределах хоста
         stringstream url;
